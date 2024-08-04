@@ -15,23 +15,41 @@ struct ContentView: View {
         sortDescriptors: [NSSortDescriptor(keyPath: \Pokemon.id, ascending: true)],
         animation: .default)
     private var pokedex: FetchedResults<Pokemon>
+    
+    @StateObject private var pokemonVM = PokemonViewModel(controller: FetchController())
 
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(pokedex) { pokemon in
-                    NavigationLink {
-                        Text("\(pokemon.id): \(pokemon.name!.capitalized)")
-                    } label: {
-                        Text("\(pokemon.id): \(pokemon.name!.capitalized)")
+        switch pokemonVM.status {
+        case .success:
+            NavigationStack {
+                List(pokedex) { pokemon in
+                    NavigationLink(value: pokemon) {
+                        AsyncImage(url: pokemon.sprite) { image in
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        } placeholder: {
+                            ProgressView()
+                        }
+                        .frame(width: 100, height: 100)
+                        
+                        Text(pokemon.name!.capitalized)
+                    }
+                }
+                .navigationTitle("Pokedex")
+                .navigationDestination(for: Pokemon.self, destination: { pokemon in
+                    PokemonDetail()
+                        .environmentObject(pokemon)
+                })
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        EditButton()
                     }
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-            }
+            
+        default:
+            ProgressView()
         }
     }
 }
